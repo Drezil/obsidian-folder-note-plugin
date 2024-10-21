@@ -1,5 +1,5 @@
 
-import { App, } from "obsidian";
+import { App, MarkdownRenderer, } from "obsidian";
 
 // ------------------------------------------------------------
 // Card block
@@ -91,7 +91,7 @@ export class CardBlock {
             for (var i in allItems) {
                 const cardInfo = allItems[i];
                 if ('title' in cardInfo) {
-                    let cardItem = new CardItem(cardInfo['title'], CardStyle.Note);
+                    let cardItem = new CardItem(cardInfo['title'], CardStyle.Note, cardInfo.sourcePath || "");
                     cardItem.fromDict(cardInfo);
                     this.addCard(cardItem);
                 }
@@ -121,13 +121,15 @@ export class CardItem {
     headImage: string;
     title: string;
     titleLink: string;
+    sourcePath: string;
     abstract: string;
     footnote: string;
 
-    constructor(title: string, style: CardStyle) {
+    constructor(title: string, style: CardStyle, sourcePath: string) {
         this.title = title;
         this.abstract = "No abstract.";
         this.cardStyle = style;
+        this.sourcePath = sourcePath;
     }
 
     setHeadText(text: string) {
@@ -265,7 +267,7 @@ export class CardItem {
         }
         // abstract
         let briefEl = articleEl.appendChild(document.createElement('p'));
-        briefEl.textContent = this.abstract;
+        MarkdownRenderer.render(app, this.abstract, briefEl, this.sourcePath, null);
         // footnote
         if (this.footnote) {
             let footEl = articleEl.appendChild(document.createElement('span'));
