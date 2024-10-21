@@ -1,5 +1,5 @@
 
-import { App, MarkdownView, TFile, } from "obsidian";
+import { App, getFrontMatterInfo, MarkdownView, parseYaml, TFile, } from "obsidian";
 import { CardStyle, CardBlock, CardItem } from './card-item'
 
 // ------------------------------------------------------------
@@ -15,7 +15,7 @@ export class FolderBrief {
     constructor(app: App) {
         this.app = app;
         this.folderPath = '';
-        this.briefMax = 64;
+        this.briefMax = 255;
         this.noteOnly = false;
     }
 
@@ -85,7 +85,7 @@ export class FolderBrief {
     async makeFolderCard(folderPath: string, subFolderPath: string) {
         // title
         var subFolderName = subFolderPath.split('/').pop();
-        let card = new CardItem(subFolderName, CardStyle.Folder);
+        let card = new CardItem(subFolderName, CardStyle.Folder, subFolderPath);
 
         // description
         let subPathList = await this.app.vault.adapter.list(subFolderPath);
@@ -106,7 +106,7 @@ export class FolderBrief {
         // titile
         var noteName = notePath.split('/').pop();
         var noteTitle = noteName.substring(0, noteName.length - 3);
-        let card = new CardItem(noteTitle, CardStyle.Note);
+        let card = new CardItem(noteTitle, CardStyle.Note, notePath);
         card.setTitleLink(notePath);
 
         // read content
@@ -184,12 +184,20 @@ export class FolderBrief {
     getContentBrief(contentOrg: string) {
         // remove some special content
         var content = contentOrg.trim();
+        var yaml = getFrontMatterInfo(contentOrg);
 
         // skip yaml head
         if (content.startsWith('---\r') || content.startsWith('---\n') ) {
             const hPos2 = content.indexOf('---', 4);
             if (hPos2 >= 0 && (content[hPos2-1] == '\n' || (content[hPos2-1] == '\r'))) {
                 content = content.substring(hPos2+4).trim();
+            }
+        }
+        if (yaml.exists) {
+            var fm = parseYaml(yaml.frontmatter);
+            if (fm["abstract"] != "" || fm["brief"] != "") {
+                if (fm["brief"]) return fm["brief"];
+                if (fm["abstract"]) return fm["abstract"];
             }
         }
 
